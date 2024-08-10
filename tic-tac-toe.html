@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>틱택토 게임</title>
+    <style>
+        /* 기본 스타일 */
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            transition: background-color 0.5s, color 0.5s; /* 애니메이션 추가 */
+        }
+
+        /* 다크 모드 관련 스타일 */
+        .dark-mode {
+            background-color: #333;
+            color: #f0f0f0;
+        }
+
+        .dark-mode .status, 
+        .dark-mode button, 
+        .dark-mode #settings-back-button, 
+        .dark-mode #exit-button, 
+        .dark-mode #settings-button, 
+        .dark-mode #settings-button-game {
+            color: #f0f0f0; /* 흰색 글씨 */
+        }
+
+        .dark-mode .main-page-button {
+            color: #000; /* 검은색 글씨 */
+        }
+
+        /* 추가된 부분: "메인 페이지로" 버튼의 색상 수정 */
+        .dark-mode #back-to-main {
+            color: #000; /* 다크 모드에서 검은색으로 설정 */
+        }
+
+        #dark-mode-toggle {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #dark-mode-toggle span {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        #dark-mode-toggle .switch {
+            width: 50px;
+            height: 25px;
+            background: #ddd;
+            border-radius: 15px;
+            position: relative;
+            transition: background 0.3s; /* 애니메이션 추가 */
+            cursor: pointer;
+        }
+
+        #dark-mode-toggle .switch::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 2.5px;
+            left: 2.5px;
+            transition: transform 0.3s; /* 애니메이션 추가 */
+        }
+
+        #dark-mode-toggle .switch.active {
+            background: #28a745; /* 초록색 배경 */
+        }
+
+        #dark-mode-toggle .switch.active::before {
+            transform: translateX(25px);
+        }
+
+        .container, .game-container, .settings-container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-image {
+            width: 300px;
+            height: 300px;
+            background-color: #ccc;
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 20px;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin: 20px 0;
+        }
+
+        .game-board button {
+            width: 100px;
+            height: 100px;
+            font-size: 24px;
+            background-color: white;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px; /* 둥근 모서리 추가 */
+            color: inherit; /* 글씨 색상 상속 */
+            transition: background-color 0.3s, transform 0.2s; /* 애니메이션 추가 */
+        }
+
+        .game-board button:hover {
+            background-color: #f9f9f9;
+            transform: scale(1.05);
+        }
+
+        .game-board button.disabled {
+            cursor: not-allowed;
+            background-color: #e0e0e0;
+            pointer-events: none;
+        }
+
+        .status {
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 10px; /* 둥근 모서리 추가 */
+            color: inherit; /* 글씨 색상 상속 */
+            border: 2px solid #ddd;
+            background-color: #fff;
+            transition: background-color 0.3s, transform 0.2s; /* 애니메이션 추가 */
+        }
+
+        button:hover {
+            background-color: #f9f9f9;
+            transform: scale(1.05);
+        }
+
+        #back-to-main {
+            display: none;
+        }
+
+        /* 나가기 버튼 스타일 */
+        #exit-button, #settings-back-button {
+            position: fixed; /* 페이지 스크롤에 관계없이 고정 위치 */
+            top: 10px; /* 상단 여백 */
+            left: 10px; /* 왼쪽 여백 */
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #333;
+            z-index: 1000; /* 다른 요소 위에 표시되도록 */
+        }
+
+        /* 설정 버튼 위치 조정 */
+        #settings-button, #settings-button-game {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+            z-index: 1000;
+        }
+
+        #settings-page {
+            display: none;
+            position: relative; /* 설정 페이지의 위치 설정 */
+            padding-top: 40px; /* 버튼이 내용과 겹치지 않도록 여백 추가 */
+        }
+
+        #settings-page .settings-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative; /* 위치를 상대적으로 설정 */
+        }
+
+        /* 승리 애니메이션 */
+        .winner {
+            animation: winner-animation 1s ease-out;
+            border: 2px solid gold;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        @keyframes winner-animation {
+            0% {
+                transform: scale(1);
+                background-color: #fff;
+            }
+            50% {
+                transform: scale(1.1);
+                background-color: #ffeb3b;
+            }
+            100% {
+                transform: scale(1);
+                background-color: #fff;
+            }
+        }
+
+        /* O와 X의 색상 지정 */
+        .game-board button.o {
+            color: red; /* O는 빨간색 */
+        }
+
+        .game-board button.x {
+            color: blue; /* X는 파란색 */
+        }
+    </style>
+</head>
+<body>
+    <!-- 메인 페이지 -->
+    <div id="main-page" class="container">
+        <div class="main-image"></div>
+        <div class="buttons-container">
+            <button id="single-player" class="main-page-button">싱글 플레이</button>
+            <button id="multiplayer" class="main-page-button">친구와 플레이</button>
+        </div>
+        <button id="settings-button">&#9881;</button> <!-- 톱니바퀴 아이콘 -->
+    </div>
+
+    <!-- 틱택토 게임 페이지 -->
+    <div id="game-page" class="game-container" style="display: none;">
+        <button id="exit-button">&gt; 나가기</button>
+        <div class="status" id="status">플레이어 O의 차례</div>
+        <div id="game-board" class="game-board">
+            <button data-cell="0"></button>
+            <button data-cell="1"></button>
+            <button data-cell="2"></button>
+            <button data-cell="3"></button>
+            <button data-cell="4"></button>
+            <button data-cell="5"></button>
+            <button data-cell="6"></button>
+            <button data-cell="7"></button>
+            <button data-cell="8"></button>
+        </div>
+        <div class="buttons-container">
+            <button id="back-to-main">메인 페이지로</button>
+        </div>
+        <button id="settings-button-game">&#9881;</button> <!-- 게임 중 톱니바퀴 아이콘 -->
+    </div>
+
+    <!-- 설정 페이지 -->
+    <div id="settings-page" class="settings-container">
+        <button id="settings-back-button">&gt; 나가기</button>
+        <div id="dark-mode-toggle">
+            <span>다크 모드</span>
+            <div class="switch"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainPage = document.getElementById('main-page');
+            const gamePage = document.getElementById('game-page');
+            const settingsPage = document.getElementById('settings-page');
+            const gameBoard = document.getElementById('game-board');
+            const status = document.getElementById('status');
+            const singlePlayerButton = document.getElementById('single-player');
+            const multiplayerButton = document.getElementById('multiplayer');
+            const backToMainButton = document.getElementById('back-to-main');
+            const exitButton = document.getElementById('exit-button');
+            const settingsButton = document.getElementById('settings-button');
+            const settingsButtonGame = document.getElementById('settings-button-game');
+            const settingsBackButton = document.getElementById('settings-back-button');
+            const darkModeSwitch = document.querySelector('#dark-mode-toggle .switch');
+
+            let board = Array(9).fill(null);
+            let currentPlayer = 'O';
+            let gameActive = true;
+            let isSinglePlayer = false;
+            let isAITurn = false;
+
+            // 다크 모드 설정
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                darkModeSwitch.classList.add('active');
+            }
+
+            function toggleActiveButton(button) {
+                document.querySelectorAll('.main-page-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            }
+
+            singlePlayerButton.addEventListener('click', () => {
+                isSinglePlayer = true;
+                startGame();
+            });
+
+            multiplayerButton.addEventListener('click', () => {
+                isSinglePlayer = false;
+                startGame();
+            });
+
+            exitButton.addEventListener('click', () => {
+                location.reload();
+            });
+
+            settingsButton.addEventListener('click', () => {
+                mainPage.style.display = 'none';
+                gamePage.style.display = 'none';
+                settingsPage.style.display = 'flex';
+            });
+
+            settingsButtonGame.addEventListener('click', () => {
+                mainPage.style.display = 'none';
+                gamePage.style.display = 'none';
+                settingsPage.style.display = 'flex';
+            });
+
+            settingsBackButton.addEventListener('click', () => {
+                if (gamePage.style.display === 'flex' || gamePage.style.display === 'grid') {
+                    gamePage.style.display = 'flex';
+                } else {
+                    mainPage.style.display = 'flex';
+                }
+                settingsPage.style.display = 'none';
+            });
+
+            darkModeSwitch.addEventListener('click', () => {
+                const isActive = darkModeSwitch.classList.toggle('active');
+                document.body.classList.toggle('dark-mode', isActive);
+                localStorage.setItem('darkMode', isActive);
+            });
+
+            backToMainButton.addEventListener('click', () => {
+                gamePage.style.display = 'none';
+                mainPage.style.display = 'flex';
+                resetGame();  // 게임 보드 초기화
+            });
+
+            function startGame() {
+                resetGame();  // 게임 보드 초기화
+                mainPage.style.display = 'none';
+                gamePage.style.display = 'flex';
+                gameBoard.style.display = 'grid';
+                status.textContent = '플레이어 O의 차례';
+                backToMainButton.style.display = 'none';
+
+                if (isSinglePlayer) {
+                    currentPlayer = Math.random() < 0.5 ? 'X' : 'O'; // AI와 플레이어의 선공을 랜덤으로 설정
+                    isAITurn = currentPlayer === 'X';
+                    if (isAITurn) aiTurn(); // AI 턴 시작
+                }
+
+                gameBoard.addEventListener('click', handleClick);
+            }
+
+            function handleClick(event) {
+                if (!gameActive || event.target.tagName !== 'BUTTON' || event.target.textContent) return;
+                if (currentPlayer === 'X' && isAITurn) return; // AI 턴 중에는 플레이어의 상호작용 방지
+
+                const cell = event.target;
+                const cellIndex = parseInt(cell.getAttribute('data-cell'));
+                board[cellIndex] = currentPlayer;
+                cell.textContent = currentPlayer;
+
+                if (currentPlayer === 'O') cell.classList.add('o');
+                if (currentPlayer === 'X') cell.classList.add('x');
+
+                if (checkWinner(currentPlayer)) {
+                    status.textContent = `플레이어 ${currentPlayer} 승리!`;
+                    cell.classList.add('winner'); // 승리 효과 적용
+                    endGame();
+                } else if (board.every(cell => cell)) {
+                    status.textContent = '무승부!';
+                    endGame();
+                } else {
+                    currentPlayer = currentPlayer === 'O' ? 'X' : 'O';
+                    status.textContent = `플레이어 ${currentPlayer}의 차례`;
+                    if (isSinglePlayer && currentPlayer === 'X') {
+                        isAITurn = true;
+                        aiTurn();
+                    }
+                }
+            }
+
+            function aiTurn() {
+                if (!isAITurn || !gameActive) return;
+
+                status.textContent = 'AI의 턴';
+
+                setTimeout(() => {
+                    let emptyCells = board.map((cell, index) => cell === null ? index : null).filter(index => index !== null);
+
+                    if (emptyCells.length > 0) {
+                        let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                        board[randomIndex] = 'X';
+                        gameBoard.children[randomIndex].textContent = 'X';
+                        gameBoard.children[randomIndex].classList.add('x');
+
+                        if (checkWinner('X')) {
+                            status.textContent = '플레이어 X 승리!';
+                            gameBoard.children[randomIndex].classList.add('winner'); // 승리 효과 적용
+                            endGame();
+                        } else if (board.every(cell => cell)) {
+                            status.textContent = '무승부!';
+                            endGame();
+                        } else {
+                            currentPlayer = 'O';
+                            status.textContent = '플레이어 O의 차례';
+                            isAITurn = false;
+                        }
+                    }
+                }, 500);
+            }
+
+            function endGame() {
+                gameActive = false;
+                gameBoard.removeEventListener('click', handleClick);
+                backToMainButton.style.display = 'block';
+                Array.from(gameBoard.children).forEach(button => {
+                    button.classList.add('disabled');
+                });
+            }
+
+            function resetGame() {
+                board = Array(9).fill(null);  // 게임 보드 초기화
+                currentPlayer = 'O';  // 첫 플레이어를 O로 초기화
+                gameActive = true;  // 게임 상태를 활성화
+                isAITurn = false;  // AI 턴 초기화
+                Array.from(gameBoard.children).forEach(button => {
+                    button.textContent = '';
+                    button.classList.remove('o', 'x', 'disabled', 'winner');
+                });
+            }
+
+            function checkWinner(player) {
+                const winningCombinations = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7],
+                    [2, 5, 8], [0, 4, 8], [2, 4, 6]
+                ];
+
+                return winningCombinations.some(combination => 
+                    combination.every(index => board[index] === player)
+                );
+            }
+        });
+    </script>
+</body>
+</html>
